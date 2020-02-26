@@ -5,8 +5,8 @@ namespace Todo
 {
     public interface ICommand
     {
-        public void Execute(params object[] param) { }
-        //public string HelpTips() { return ""; }
+        public void Execute(params string[] param) { }
+        public string HelpTips() { return ""; }
     }
 
     public enum CommandType
@@ -25,6 +25,19 @@ namespace Todo
 
         private Dictionary<CommandType, ICommand> _commandDir = new Dictionary<CommandType, ICommand>();
         private Dictionary<string, CommandType> _strToCommand = new Dictionary<string, CommandType>();
+        public List<string> GetCommandStrs()
+        {
+            List<string> comStrs = new List<string>();
+            foreach (var stc in _strToCommand)
+            {
+                comStrs.Add(stc.Key);
+            }
+            return comStrs;
+        }
+        public string GetHelpTips(string comStr)
+        {
+            return _commandDir[_strToCommand[comStr.ToLower()]].HelpTips();
+        }
 
         private CommandMgr()
         {
@@ -32,27 +45,31 @@ namespace Todo
             _commandDir.Add(CommandType.AddTodo, new AddTodoCommand());
             _commandDir.Add(CommandType.DelTodo, new DelTodoCommand());
             _commandDir.Add(CommandType.ShowTodos, new ShowTodosCommand());
-            _strToCommand.Add("setsavedirectory", CommandType.SetSaveDirectory);
+            _commandDir.Add(CommandType.Help, new HelpCommand());
+            _strToCommand.Add("setpath", CommandType.SetSaveDirectory);
             _strToCommand.Add("add", CommandType.AddTodo);
             _strToCommand.Add("del", CommandType.DelTodo);
             _strToCommand.Add("list", CommandType.ShowTodos);
+            _strToCommand.Add("help", CommandType.Help);
         }
 
-        public void ExecuteCommand(params object[] param)
+        public void ExecuteCommand(params string[] param)
         {
             var commandStr = param[0] as string;
+            commandStr = commandStr.ToLower();
             if (_strToCommand.ContainsKey(commandStr))
             {
-                object[] p = new object[param.Length - 1];
-                if (p.Length != 0)
-                {
-                    param.CopyTo(p, 1);
-                }
+                string[] p = new string[param.Length - 1];
+                if (param.Length > 1) Array.Copy(param, 1, p, 0, param.Length - 1);
                 ExecuteCommand(_strToCommand[commandStr], p);
+            }
+            else
+            {
+                LogMgr.SystemLog(LogEnum.CommandNotHave);
             }
         }
 
-        private void ExecuteCommand(CommandType type, params object[] param)
+        private void ExecuteCommand(CommandType type, params string[] param)
         {
             if (_commandDir.ContainsKey(type))
             {
@@ -62,80 +79,114 @@ namespace Todo
                     command.Execute(param);
                 }
             }
-            else
-            {
-                Console.WriteLine("  命令不存在");
-            }
         }
     }
 
     public class SetSaveDirectoryCommand : ICommand
     {
-        public void Execute(params object[] param)
+        public void Execute(params string[] param)
         {
-            string path = param[0] as string;
+            string path = param[0];
             if (!string.IsNullOrEmpty(path))
             {
                 Blackboard.SavePath = path;
-                Console.WriteLine("  设置路径成功");
+                LogMgr.SystemLog(LogEnum.SetSavePathSuccess);
             }
+        }
+
+        public string HelpTips()
+        {
+            return "设置存储路径";
         }
     }
 
     public class AddTodoCommand : ICommand
     {
-        public void Execute(params object[] param)
+        public void Execute(params string[] param)
         {
-            string todoStr = param[0] as string;
-            if (!string.IsNullOrEmpty(todoStr))
+            if (param.Length > 0)
             {
-                Blackboard.ToDos.Add(todoStr);
-                Console.WriteLine("  添加成功");
+                if (param.Length > 1)
+                for (int i = 0; i < param.Length - 1; i++)
+                {
+                    
+                }
+                string content = param[param.Length - 1];
+                if (!string.IsNullOrEmpty(content))
+                {
+                    TodoMgr.AddTodo(content);
+                }
             }
+            else
+            {
+                LogMgr.SystemLog(LogEnum.NoParameter);
+            }
+        }
+
+        public string HelpTips()
+        {
+            return "添加新Todo";
         }
     }
 
     public class DelTodoCommand : ICommand
     {
-        public void Execute(params object[] param)
+        public void Execute(params string[] param)
         {
-            int index;
-            bool b = int.TryParse(param[0] as string, out index);
-            if (b)
+            if (param.Length > 0)
             {
-                if (index >= 0 && index < Blackboard.ToDos.Count)
+                int index;
+                bool b = int.TryParse(param[0], out index);
+                if (b)
                 {
-                    Blackboard.ToDos.RemoveAt(index);
-                    Console.WriteLine("  删除成功");
+                    TodoMgr.DelTodo(index);
                 }
                 else
                 {
-                    Console.WriteLine("  删除失败, 错误：序号不存在");
+                    LogMgr.SystemLog(LogEnum.DelFailed2); //Console.WriteLine("  删除失败, 错误：参数不为数字");
                 }
             }
             else
             {
-                Console.WriteLine("  删除失败, 错误：参数不为数字");
+                LogMgr.SystemLog(LogEnum.NoParameter);
             }
+        }
+
+        public string HelpTips()
+        {
+            return "删除对应Id的Todo";
         }
     }
 
     public class ShowTodosCommand : ICommand
     {
-        public void Execute(params object[] param)
+        public void Execute(params string[] param)
         {
-            if (Blackboard.ToDos.Count > 0)
+            TodoMgr.ShowAllTodo();
+        }
+
+        public string HelpTips()
+        {
+            return "展示全部Todo";
+        }
+    }
+
+    public class HelpCommand : ICommand
+    {
+        public void Execute(params string[] param)
+        {
+            var comStrs = CommandMgr.Instance.GetCommandStrs();
+            LogMgr.Log("示例：<命令> [<参数>(可多个参数)]");
+            LogMgr.Log("可用命令(无视大小写)：\n");
+            for (int i = 0; i < comStrs.Count; i++)
             {
-                string todoTemp = @"  {0}.  {1}";
-                for (int i = 0; i < Blackboard.ToDos.Count; i++)
-                {
-                    Console.WriteLine(string.Format(todoTemp, i, Blackboard.ToDos[i]));
-                }
+                LogMgr.Log(comStrs[i].PadRight(15) + CommandMgr.Instance.GetHelpTips(comStrs[i]));
             }
-            else
-            {
-                Console.WriteLine("  恭喜！Todo全部完成");
-            }
+        }
+
+        public string HelpTips()
+        {
+            return "显示全部命令";
         }
     }
 }
