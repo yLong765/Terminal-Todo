@@ -19,5 +19,17 @@ namespace Todo
             }
             return null;
         }
+
+        public void LoadFile()
+        {
+            var todos = ReadTodoFile();
+            if (todos != null)
+            {
+                for (int i = 0; i < todos.Length; i++)
+                {
+                    CommandMgr.Instance.ExecuteCommand("add " + todos[i]);
+                }
+            }
+        }
     }
 }

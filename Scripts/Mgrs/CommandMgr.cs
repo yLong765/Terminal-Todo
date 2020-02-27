@@ -7,7 +7,7 @@ namespace Todo
 {
     public class CommandMgr : InstanceMgr<CommandMgr>
     {
-        private Dictionary<CommandType, ICommand> _commandDir = new Dictionary<CommandType, ICommand>()
+        private Dictionary<CommandType, CommandBase> _commandDir = new Dictionary<CommandType, CommandBase>()
         {
             {CommandType.SetSaveDirectory, new SetSaveDirectoryCommand()},
             {CommandType.AddTodo, new AddTodoCommand()},
@@ -16,6 +16,7 @@ namespace Todo
             {CommandType.Help, new HelpCommand()},
             {CommandType.AddTags, new AddTagsCommand()},
             {CommandType.DelTags, new DelTagsCommand()},
+            {CommandType.DoneTodo, new DoneTodoCommand()},
         };
         private Dictionary<string, CommandType> _strToCommand = new Dictionary<string, CommandType>()
         {
@@ -26,6 +27,7 @@ namespace Todo
             {"help", CommandType.Help},
             {"addt", CommandType.AddTags},
             {"delt", CommandType.DelTags},
+            {"done", CommandType.DoneTodo},
         };
         public List<string> GetCommandList()
         {
@@ -60,10 +62,12 @@ namespace Todo
         {
             if (_commandDir.ContainsKey(type))
             {
-                ICommand command = _commandDir[type];
+                CommandBase command = _commandDir[type];
                 if (command != null)
                 {
-                    command.Execute(param);
+                    command.InitCommand(param);
+                    command.Execute();
+                    command.WriteConfig();
                 }
             }
         }

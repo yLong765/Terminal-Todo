@@ -10,49 +10,52 @@ namespace Todo
         {
             return new Todo(content, tags);
         }
-        public void AddTodo(string content, List<string> tags = null)
+        public LogEnum AddTodo(string content, List<string> tags = null)
         {
             if (!string.IsNullOrEmpty(content))
             {
                 Todos.Add(CreateTodo(content, tags));
-                LogMgr.Instance.SystemLog(LogEnum.AddSuccess);
+                return LogEnum.AddSuccess;
             }
+            return LogEnum.NoParameter;
         }
-        public void DelTodo(int index)
+        public LogEnum DelTodo(int index)
         {
             if (index >= 0 && index < Todos.Count)
             {
                 Todos.RemoveAt(index);
-                LogMgr.Instance.SystemLog(LogEnum.DelSuccess);
+                return LogEnum.DelSuccess;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.ParamerterIllegal);
-            }
+            return LogEnum.ParamerterIllegal;
         }
-        public void AddTags(int index, List<string> tags)
+        public LogEnum AddTags(int index, List<string> tags)
         {
             if (index >= 0 && index < Todos.Count)
             {
                 Todos[index].AddTags(tags);
+                return LogEnum.AddTagsSuccess;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.ParamerterIllegal);
-            }
+            return LogEnum.ParamerterIllegal;
         }
-        public void DelTags(int index, List<string> tags)
+        public LogEnum DelTags(int index, List<string> tags)
         {
             if (index >= 0 && index < Todos.Count)
             {
                 Todos[index].DelTags(tags);
+                return LogEnum.DelSuccess;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.ParamerterIllegal);
-            }
+            return LogEnum.ParamerterIllegal;
         }
-        public void SearchTodo(string tag = "完成", bool has = false)
+        public LogEnum DoneTodo(int index)
+        {
+            if (index >= 0 && index < Todos.Count)
+            {
+                Todos[index].DoneTodo();
+                return LogEnum.None;
+            }
+            return LogEnum.ParamerterIllegal;
+        }
+        public LogEnum SearchTodo(string tag = "已完成", bool has = false)
         {
             List<Todo> searchTodos = Todos.FindAll(todo =>
             {
@@ -72,11 +75,9 @@ namespace Todo
                 {
                     LogMgr.Instance.Log(string.Format(todoTemp, i, searchTodos[i]));
                 }
+                return LogEnum.None;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.ListAllDone);
-            }
+            return LogEnum.ListAllDone;
         }
         public string[] ToFileString()
         {
@@ -86,20 +87,6 @@ namespace Todo
                 result[i] = Todos[i].ToString();
             }
             return result;
-        }
-        public void LoadFile()
-        {
-            string[] todos = SaveMgr.Instance.ReadTodoFile();
-            if (todos != null)
-            {
-                for (int i = 0; i < todos.Length; i++)
-                {
-                    var commands = todos[i].Split(' ').ToList();
-                    var tags = CommandUtility.GetTags(commands);
-                    var content = CommandUtility.GetContent(commands);
-                    AddTodo(content, tags);
-                }
-            }
         }
     }
 }

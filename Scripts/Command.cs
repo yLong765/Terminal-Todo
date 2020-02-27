@@ -3,10 +3,142 @@ using System.Collections.Generic;
 
 namespace Todo
 {
-    public interface ICommand
+    public class CommandBase
     {
-        public void Execute(List<string> param) { }
-        public string HelpTips() { return ""; }
+        private List<string> param;
+
+        private bool nilTags = true;
+        private bool hasTags = false;
+        private List<string> tags;
+
+        private bool nilContent = true;
+        private bool hasContent = false;
+        private string content;
+
+        private bool nilIndex = true;
+        private bool hasIndex = false;
+        private int index;
+
+        public List<string> Tags
+        {
+            get
+            {
+                if (hasTags)
+                {
+                    return tags;
+                }
+                if (!nilTags)
+                {
+                    LogMgr.Instance.SystemLog(LogEnum.NoTag);
+                }
+                return new List<string>();
+            }
+        }
+        public int Index
+        {
+            get
+            {
+                if (hasIndex)
+                {
+                    return index;
+                }
+                if (!nilIndex)
+                {
+                    LogMgr.Instance.SystemLog(LogEnum.ParamerterIllegal);
+                }
+                return -1;
+            }
+        }
+        public string Content
+        {
+            get
+            {
+                if (hasContent)
+                {
+                    return content;
+                }
+                if (!nilContent)
+                {
+                    LogMgr.Instance.SystemLog(LogEnum.NoParameter);
+                }
+                return "";
+            }
+        }
+
+        public bool InitCommand(List<string> param)
+        {
+            this.param = param;
+            if (CheckParam())
+            {
+                tags = GetTags();
+                index = GetIndex();
+                content = GetContent();
+                return true;
+            }
+            return false;
+        }
+
+        public void WriteConfig()
+        {
+            if (NeedWrite())
+            {
+                SaveMgr.Instance.WriteTodoFile();
+            }
+        }
+
+        private bool CheckParam()
+        {
+            if (param == null || param.Count == 0)
+            {
+                //LogMgr.Instance.SystemLog(LogEnum.NoParameter);
+                return false;
+            }
+            return true;
+        }
+
+        private List<string> GetTags()
+        {
+            List<string> tags = new List<string>();
+            for (int i = 0; i < param.Count; i++)
+            {
+                if (param[i].StartsWith('[') && param[i].EndsWith(']'))
+                {
+                    hasTags = true;
+                    tags.Add(param[i].Substring(1, param[i].Length - 2));
+                    param.RemoveAt(i);
+                }
+            }
+            return tags;
+        }
+
+        private int GetIndex()
+        {
+            for (int i = 0; i < param.Count; i++)
+            {
+                int result;
+                if (int.TryParse(param[i], out result))
+                {
+                    hasIndex = true;
+                    param.RemoveAt(i);
+                    return result;
+                }
+            }
+            return -1;
+        }
+
+        private string GetContent()
+        {
+            if (param.Count == 1)
+            {
+                hasContent = true;
+                return param[0];
+            }
+            return "";
+        }
+
+        public virtual void Execute() { }
+        public virtual string HelpTips() { return ""; }
+        public virtual bool NeedWrite() { return false; }
     }
 
     public enum CommandType
@@ -18,134 +150,135 @@ namespace Todo
         Help = 5,
         AddTags = 6,
         DelTags = 7,
+        DoneTodo = 8,
     }
+    #region 工具类
+    // public static class CommandUtility
+    // {
+    //     public static bool CheckHasParams(List<string> param)
+    //     {
+    //         if (param == null || param.Count == 0)
+    //         {
+    //             LogMgr.Instance.SystemLog(LogEnum.NoParameter);
+    //             return false;
+    //         }
+    //         return true;
+    //     }
 
-    public static class CommandUtility
+    //     public static List<string> GetTags(List<string> param)
+    //     {
+    //         List<string> tags = new List<string>();
+    //         for (int i = 0; i < param.Count; i++)
+    //         {
+    //             if (param[i].StartsWith('[') && param[i].EndsWith(']'))
+    //             {
+    //                 tags.Add(param[i].Substring(1, param[i].Length - 2));
+    //                 param.RemoveAt(i);
+    //             }
+    //         }
+    //         return tags;
+    //     }
+
+    //     public static string GetContent(List<string> param)
+    //     {
+    //         for (int i = 0; i < param.Count; i++)
+    //         {
+    //             if (!param[i].StartsWith('[') || !param[i].EndsWith(']'))
+    //             {
+    //                 return param[i];
+    //             }
+    //         }
+    //         return "";
+    //     }
+
+    //     public static int GetIndex(List<string> param)
+    //     {
+    //         for (int i = 0; i < param.Count; i++)
+    //         {
+    //             int result;
+    //             if (int.TryParse(param[i], out result))
+    //             {
+    //                 return result;
+    //             }
+    //         }
+    //         return -1;
+    //     }
+    // }
+    #endregion
+
+    #region Commands
+    public class SetSaveDirectoryCommand : CommandBase
     {
-        public static bool CheckHasParams(List<string> param)
-        {
-            if (param == null || param.Count == 0)
-            {
-                LogMgr.Instance.SystemLog(LogEnum.NoParameter);
-                return false;
-            }
-            return true;
-        }
-
-        public static List<string> GetTags(List<string> param)
-        {
-            List<string> tags = new List<string>();
-            for (int i = 0; i < param.Count; i++)
-            {
-                if (param[i].StartsWith('[') && param[i].EndsWith(']'))
-                {
-                    tags.Add(param[i].Substring(1, param[i].Length - 2));
-                    param.RemoveAt(i);
-                }
-            }
-            return tags;
-        }
-
-        public static string GetContent(List<string> param)
-        {
-            for (int i = 0; i < param.Count; i++)
-            {
-                if (!param[i].StartsWith('[') || !param[i].EndsWith(']'))
-                {
-                    return param[i];
-                }
-            }
-            return "";
-        }
-
-        public static int GetIndex(List<string> param)
-        {
-            for (int i = 0; i < param.Count; i++)
-            {
-                int result;
-                if (int.TryParse(param[i], out result))
-                {
-                    return result;
-                }
-            }
-            return -1;
-        }
-    }
-
-    public class SetSaveDirectoryCommand : ICommand
-    {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
 
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "设置存储路径";
         }
     }
 
-    public class AddTodoCommand : ICommand
+    public class AddTodoCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
-            if (CommandUtility.CheckHasParams(param))
-            {
-                var content = CommandUtility.GetContent(param);
-                var tags = CommandUtility.GetTags(param);
-                TodoMgr.Instance.AddTodo(content, tags);
-            }
-            SaveMgr.Instance.WriteTodoFile();
+            TodoMgr.Instance.AddTodo(Content, Tags);
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "添加新Todo";
         }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
     }
 
-    public class DelTodoCommand : ICommand
+    public class DelTodoCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
-            if (CommandUtility.CheckHasParams(param))
-            {
-                var index = CommandUtility.GetIndex(param);
-                TodoMgr.Instance.DelTodo(index);
-            }
-            SaveMgr.Instance.WriteTodoFile();
+            TodoMgr.Instance.DelTodo(Index);
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "删除对应Id的Todo";
         }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
     }
 
-    public class ShowTodosCommand : ICommand
+    public class ShowTodosCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
-            var tags = CommandUtility.GetTags(param);
-            if (tags.Count == 0)
+            if (Tags.Count == 0)
             {
                 TodoMgr.Instance.SearchTodo();
             }
-            else if (tags.Count == 1)
+            else if (Tags.Count == 1)
             {
-                TodoMgr.Instance.SearchTodo(tags[0], true);
+                TodoMgr.Instance.SearchTodo(Tags[0], true);
             }
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "展示全部Todo";
         }
     }
 
-    public class HelpCommand : ICommand
+    public class HelpCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
             var comStrs = CommandMgr.Instance.GetCommandList();
             LogMgr.Instance.Log("示例：<命令> [<参数>(可多个参数)]");
@@ -156,60 +289,82 @@ namespace Todo
             }
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "显示全部命令";
         }
     }
 
-    public class ExitCommand : ICommand
+    public class ExitCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
 
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "";
         }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
     }
 
-    public class AddTagsCommand : ICommand
+    public class AddTagsCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
-            if (CommandUtility.CheckHasParams(param))
-            {
-                var index = CommandUtility.GetIndex(param);
-                var tags = CommandUtility.GetTags(param);
-                TodoMgr.Instance.AddTags(index, tags);
-            }
-            SaveMgr.Instance.WriteTodoFile();
+            TodoMgr.Instance.AddTags(Index, Tags);
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "添加标签";
         }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
     }
 
-    public class DelTagsCommand : ICommand
+    public class DelTagsCommand : CommandBase
     {
-        public void Execute(List<string> param)
+        public override void Execute()
         {
-            if (CommandUtility.CheckHasParams(param))
-            {
-                var index = CommandUtility.GetIndex(param);
-                var tags = CommandUtility.GetTags(param);
-                TodoMgr.Instance.DelTags(index, tags);
-            }
-            SaveMgr.Instance.WriteTodoFile();
+            TodoMgr.Instance.DelTags(Index, Tags);
         }
 
-        public string HelpTips()
+        public override string HelpTips()
         {
             return "删除标签";
         }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
     }
+
+    public class DoneTodoCommand : CommandBase
+    {
+        public override void Execute()
+        {
+            TodoMgr.Instance.DoneTodo(Index);
+        }
+
+        public override string HelpTips()
+        {
+            return "设置存储路径";
+        }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
+    }
+    #endregion
 }

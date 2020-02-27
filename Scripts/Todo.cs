@@ -62,6 +62,10 @@ namespace Todo
                 LogMgr.Instance.SystemLog(LogEnum.NoTag);
             }
         }
+        public void DoneTodo()
+        {
+            AddTag("已完成");
+        }
         public override string ToString()
         {
             string str = "";
