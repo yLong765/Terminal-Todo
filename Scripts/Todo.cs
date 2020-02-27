@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace Todo
@@ -7,12 +6,16 @@ namespace Todo
     {
         public HashSet<string> tags = new HashSet<string>();
         public string content;
-        public Todo(string content, params string[] tags)
+        public Todo(string content, List<string> tags = null)
         {
             this.content = content;
-            for (int i = 0; i < tags.Length; i++)
+            if (tags == null || tags.Count == 0)
             {
-                AddTag(tags[i]);
+                AddTag("收集箱"); // 默认tag
+            }
+            else
+            {
+                AddTags(tags);
             }
         }
         public void AddTag(string tag)
@@ -22,55 +25,54 @@ namespace Todo
                 tags.Add(tag);
             }
         }
+        public void DelTag(string tag)
+        {
+            if (tags.Contains(tag))
+            {
+                tags.Remove(tag);
+            }
+        }
+        public void AddTags(List<string> tags)
+        {
+            if (tags != null && tags.Count != 0)
+            {
+                for (int i = 0; i < tags.Count; i++)
+                {
+                    AddTag(tags[i]);
+                }
+                LogMgr.Instance.SystemLog(LogEnum.AddTagsSuccess);
+            }
+            else
+            {
+                LogMgr.Instance.SystemLog(LogEnum.NoTag);
+            }
+        }
+        public void DelTags(List<string> tags)
+        {
+            if (tags != null)
+            {
+                for (int i = 0; i < tags.Count; i++)
+                {
+                    DelTag(tags[i]);
+                }
+                LogMgr.Instance.SystemLog(LogEnum.DelTagsSuccess);
+            }
+            else
+            {
+                LogMgr.Instance.SystemLog(LogEnum.NoTag);
+            }
+        }
         public override string ToString()
         {
             string str = "";
             foreach (var tag in tags)
             {
-                str += "[" + tag +"] ";
-            }
-            return str + content;
-        }
-    }
-
-    public class TodoMgr
-    {
-        private static List<Todo> Todos = new List<Todo>();
-        public static Todo CreateTodo(string content, params string[] tags)
-        {
-            return new Todo(content, tags);
-        }
-        public static void AddTodo(string content, params string[] tags)
-        {
-            Todos.Add(CreateTodo(content, tags));
-            LogMgr.SystemLog(LogEnum.AddSuccess);
-        }
-        public static void DelTodo(int index)
-        {
-            if (index >= 0 && index < Todos.Count)
-            {
-                Todos.RemoveAt(index);
-                LogMgr.SystemLog(LogEnum.DelSuccess);
-            }
-            else
-            {
-                LogMgr.SystemLog(LogEnum.DelFailed1);
-            }
-        }
-        public static void ShowAllTodo()
-        {
-            if (Todos.Count > 0)
-            {
-                string todoTemp = @"{0}. {1}";
-                for (int i = 0; i < Todos.Count; i++)
+                if (tag != "收集箱")
                 {
-                    LogMgr.Log(string.Format(todoTemp, i, Todos[i]));
+                    str += "[" + tag + "] ";
                 }
             }
-            else
-            {
-                LogMgr.SystemLog(LogEnum.ListAllDone);
-            }
+            return str + content;
         }
     }
 }
