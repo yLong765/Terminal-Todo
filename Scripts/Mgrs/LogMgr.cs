@@ -26,30 +26,37 @@ namespace Todo
 
     public class LogMgr : InstanceMgr<LogMgr>
     {
+        public bool CanOutPutLog = true;
         //private static readonly string _logFilePath = "debug.log";
         private Dictionary<LogEnum, Log> _logs = new Dictionary<LogEnum, Log>()
         {
             {LogEnum.None, new Log {type = LogType.Normal, content = ""}},
             {LogEnum.CommandNotHave, new Log {type = LogType.Error, content = "命令不存在，请输入help来查看全部命令"}},
-            {LogEnum.NoParameter, new Log {type = LogType.Warning, content = "无参数"}},
-            {LogEnum.ParamerterIllegal, new Log {type = LogType.Error, content = "参数非法"}},
+            {LogEnum.NoParameter, new Log {type = LogType.Warning, content = "No Oaram"}},
+            {LogEnum.ParamerterIllegal, new Log {type = LogType.Error, content = "Param Illegal"}},
             {LogEnum.SetSavePathSuccess, new Log {type = LogType.Normal, content = "设置路径成功"}},
-            {LogEnum.AddSuccess, new Log {type = LogType.Normal, content = "添加成功"}},
-            {LogEnum.DelSuccess, new Log {type = LogType.Normal, content = "删除成功"}},
-            {LogEnum.ListAllDone, new Log {type = LogType.Normal, content = "恭喜！Todo全部完成"}},
-            {LogEnum.AddTagsSuccess, new Log {type = LogType.Normal, content = "添加标签成功"}},
-            {LogEnum.DelTagsSuccess, new Log {type = LogType.Normal, content = "删除标签成功"}},
-            {LogEnum.NoTag, new Log {type = LogType.Warning, content = "无标签"}},
+            {LogEnum.AddSuccess, new Log {type = LogType.Normal, content = "Add Todo Success"}},
+            {LogEnum.DelSuccess, new Log {type = LogType.Normal, content = "Del Todo Success"}},
+            {LogEnum.ListAllDone, new Log {type = LogType.Normal, content = "No Todo, Enjory!"}},
+            {LogEnum.AddTagsSuccess, new Log {type = LogType.Normal, content = "Add Tags Success"}},
+            {LogEnum.DelTagsSuccess, new Log {type = LogType.Normal, content = "Del Tags Success"}},
+            {LogEnum.NoTag, new Log {type = LogType.Warning, content = "No Tag"}},
         };
 
         private void WriteInLogFile(string log)
         {
-            Console.WriteLine(log);
+            if (CanOutPutLog)
+            {
+                Console.WriteLine(log);
+            }
         }
 
         public void SystemLog(LogEnum id = LogEnum.None)
         {
-            WriteInLogFile(_logs[id].ToString());
+            if (id != LogEnum.None)
+            {
+                WriteInLogFile(_logs[id].ToString());
+            }
         }
 
         public void Error(string log)

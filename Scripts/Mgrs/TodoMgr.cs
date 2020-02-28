@@ -28,12 +28,15 @@ namespace Todo
             }
             return LogEnum.ParamerterIllegal;
         }
+        public void DelTodo(Todo todo)
+        {
+            Todos.Remove(todo);
+        }
         public LogEnum AddTags(int index, List<string> tags)
         {
             if (index >= 0 && index < Todos.Count)
             {
-                Todos[index].AddTags(tags);
-                return LogEnum.AddTagsSuccess;
+                return Todos[index].AddTags(tags);
             }
             return LogEnum.ParamerterIllegal;
         }
@@ -41,33 +44,22 @@ namespace Todo
         {
             if (index >= 0 && index < Todos.Count)
             {
-                Todos[index].DelTags(tags);
-                return LogEnum.DelSuccess;
+                return Todos[index].DelTags(tags);
             }
             return LogEnum.ParamerterIllegal;
         }
         public LogEnum DoneTodo(int index)
         {
-            if (index >= 0 && index < Todos.Count)
+            var todos = SearchTodo(SpecialTag.Done, false);
+            if (index >= 0 && index < todos.Count)
             {
-                Todos[index].DoneTodo();
-                return LogEnum.None;
+                todos[index].DoneTodo();
             }
-            return LogEnum.ParamerterIllegal;
+            return LogEnum.None;
         }
-        public LogEnum SearchTodo(string tag = "已完成", bool has = false)
+        public LogEnum ShowList(string tag, bool has)
         {
-            List<Todo> searchTodos = Todos.FindAll(todo =>
-            {
-                if (has)
-                {
-                    return todo.tags.Contains(tag);
-                }
-                else
-                {
-                    return !todo.tags.Contains(tag);
-                }
-            });
+            var searchTodos = SearchTodo(tag, has);
             if (searchTodos.Count > 0)
             {
                 string todoTemp = @"{0}. {1}";
@@ -79,14 +71,47 @@ namespace Todo
             }
             return LogEnum.ListAllDone;
         }
+        public LogEnum ClearTodo(List<string> tags)
+        {
+            if (tags.Count != 0)
+            {
+                foreach (var tag in tags)
+                {
+                    var todos = SearchTodo(tag, true);
+                    foreach (var todo in todos)
+                    {
+                        DelTodo(todo);
+                    }
+                }
+            }
+            else
+            {
+                Todos.Clear();
+            }
+            return LogEnum.None;
+        }
         public string[] ToFileString()
         {
             string[] result = new string[Todos.Count];
             for (int i = 0; i < Todos.Count; i++)
             {
-                result[i] = Todos[i].ToString();
+                result[i] = Todos[i].ToFileString();
             }
             return result;
+        }
+        public List<Todo> SearchTodo(string tag, bool has = true)
+        {
+            return Todos.FindAll(todo =>
+            {
+                if (has)
+                {
+                    return todo.tags.Contains(tag);
+                }
+                else
+                {
+                    return !todo.tags.Contains(tag);
+                }
+            });
         }
     }
 }

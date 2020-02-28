@@ -17,6 +17,7 @@ namespace Todo
             {CommandType.AddTags, new AddTagsCommand()},
             {CommandType.DelTags, new DelTagsCommand()},
             {CommandType.DoneTodo, new DoneTodoCommand()},
+            {CommandType.ClearTodo, new ClearTodoCommand()},
         };
         private Dictionary<string, CommandType> _strToCommand = new Dictionary<string, CommandType>()
         {
@@ -28,6 +29,7 @@ namespace Todo
             {"addt", CommandType.AddTags},
             {"delt", CommandType.DelTags},
             {"done", CommandType.DoneTodo},
+            {"clear", CommandType.ClearTodo},
         };
         public List<string> GetCommandList()
         {
@@ -58,7 +60,7 @@ namespace Todo
             }
         }
 
-        private void ExecuteCommand(CommandType type, List<string> param = null)
+        public void ExecuteCommand(CommandType type, List<string> param = null)
         {
             if (_commandDir.ContainsKey(type))
             {
@@ -66,7 +68,8 @@ namespace Todo
                 if (command != null)
                 {
                     command.InitCommand(param);
-                    command.Execute();
+                    var log = command.Execute();
+                    LogMgr.Instance.SystemLog(log);
                     command.WriteConfig();
                 }
             }

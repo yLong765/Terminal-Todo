@@ -26,18 +26,22 @@ namespace Todo
         static void InitAllMgr()
         {
             LogMgr.Create();
+            LogMgr.Instance.CanOutPutLog = false;
             TodoMgr.Create();
             CommandMgr.Create();
             SaveMgr.Create();
             Console.WriteLine("Loading File...");
             SaveMgr.Instance.LoadFile();
+            LogMgr.Instance.CanOutPutLog = true;
             Console.WriteLine("Done! can use");
+            CommandMgr.Instance.ExecuteCommand("list");
         }
 
         static void Test()
         {
-            CommandMgr.Instance.ExecuteCommand("add [p1] [p2] 123");
-            CommandMgr.Instance.ExecuteCommand("list");
+            //CommandMgr.Instance.ExecuteCommand("list");
+            //CommandMgr.Instance.ExecuteCommand("done 2");
+            //CommandMgr.Instance.ExecuteCommand("done 2");
             //CommandMgr.Instance.ExecuteCommand("addt [nb] 0");
             //CommandMgr.Instance.ExecuteCommand("list");
         }

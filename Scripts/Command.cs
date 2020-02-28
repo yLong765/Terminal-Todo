@@ -1,3 +1,5 @@
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using System.Collections.Generic;
 
@@ -7,67 +9,20 @@ namespace Todo
     {
         private List<string> param;
 
-        private bool nilTags = true;
-        private bool hasTags = false;
         private List<string> tags;
-
-        private bool nilContent = true;
-        private bool hasContent = false;
         private string content;
-
-        private bool nilIndex = true;
-        private bool hasIndex = false;
         private int index;
 
-        public List<string> Tags
-        {
-            get
-            {
-                if (hasTags)
-                {
-                    return tags;
-                }
-                if (!nilTags)
-                {
-                    LogMgr.Instance.SystemLog(LogEnum.NoTag);
-                }
-                return new List<string>();
-            }
-        }
-        public int Index
-        {
-            get
-            {
-                if (hasIndex)
-                {
-                    return index;
-                }
-                if (!nilIndex)
-                {
-                    LogMgr.Instance.SystemLog(LogEnum.ParamerterIllegal);
-                }
-                return -1;
-            }
-        }
-        public string Content
-        {
-            get
-            {
-                if (hasContent)
-                {
-                    return content;
-                }
-                if (!nilContent)
-                {
-                    LogMgr.Instance.SystemLog(LogEnum.NoParameter);
-                }
-                return "";
-            }
-        }
+        public List<string> Tags { get { return tags; } }
+        public int Index { get { return index; } }
+        public string Content { get { return content; } }
 
         public bool InitCommand(List<string> param)
         {
             this.param = param;
+            this.tags = new List<string>();
+            this.index = -1;
+            this.content = "";
             if (CheckParam())
             {
                 tags = GetTags();
@@ -99,14 +54,18 @@ namespace Todo
         private List<string> GetTags()
         {
             List<string> tags = new List<string>();
+            List<int> removeTags = new List<int>();
             for (int i = 0; i < param.Count; i++)
             {
                 if (param[i].StartsWith('[') && param[i].EndsWith(']'))
                 {
-                    hasTags = true;
                     tags.Add(param[i].Substring(1, param[i].Length - 2));
-                    param.RemoveAt(i);
+                    removeTags.Add(i);
                 }
+            }
+            for (int i = removeTags.Count - 1; i >= 0; i--)
+            {
+                param.RemoveAt(removeTags[i]);
             }
             return tags;
         }
@@ -118,8 +77,6 @@ namespace Todo
                 int result;
                 if (int.TryParse(param[i], out result))
                 {
-                    hasIndex = true;
-                    param.RemoveAt(i);
                     return result;
                 }
             }
@@ -130,13 +87,12 @@ namespace Todo
         {
             if (param.Count == 1)
             {
-                hasContent = true;
                 return param[0];
             }
             return "";
         }
 
-        public virtual void Execute() { }
+        public virtual LogEnum Execute() { return LogEnum.None; }
         public virtual string HelpTips() { return ""; }
         public virtual bool NeedWrite() { return false; }
     }
@@ -151,6 +107,8 @@ namespace Todo
         AddTags = 6,
         DelTags = 7,
         DoneTodo = 8,
+        ClearTodo = 9,
+        Restore = 10,
     }
     #region 工具类
     // public static class CommandUtility
@@ -209,11 +167,6 @@ namespace Todo
     #region Commands
     public class SetSaveDirectoryCommand : CommandBase
     {
-        public override void Execute()
-        {
-
-        }
-
         public override string HelpTips()
         {
             return "设置存储路径";
@@ -222,9 +175,11 @@ namespace Todo
 
     public class AddTodoCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             TodoMgr.Instance.AddTodo(Content, Tags);
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
         }
 
         public override string HelpTips()
@@ -240,9 +195,11 @@ namespace Todo
 
     public class DelTodoCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             TodoMgr.Instance.DelTodo(Index);
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
         }
 
         public override string HelpTips()
@@ -258,16 +215,22 @@ namespace Todo
 
     public class ShowTodosCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
-            if (Tags.Count == 0)
+            LogEnum log = LogEnum.None;
+            if (Content == "done")
             {
-                TodoMgr.Instance.SearchTodo();
+                log = TodoMgr.Instance.ShowList(SpecialTag.Done, true);
+            }
+            else if (Tags == null || Tags.Count == 0)
+            {
+                log = TodoMgr.Instance.ShowList(SpecialTag.Done, false);
             }
             else if (Tags.Count == 1)
             {
-                TodoMgr.Instance.SearchTodo(Tags[0], true);
+                log = TodoMgr.Instance.ShowList(Tags[0], true);
             }
+            return log;
         }
 
         public override string HelpTips()
@@ -278,7 +241,7 @@ namespace Todo
 
     public class HelpCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             var comStrs = CommandMgr.Instance.GetCommandList();
             LogMgr.Instance.Log("示例：<命令> [<参数>(可多个参数)]");
@@ -287,6 +250,7 @@ namespace Todo
             {
                 LogMgr.Instance.Log(comStrs[i].PadRight(15) + CommandMgr.Instance.GetHelpTips(comStrs[i]));
             }
+            return LogEnum.None;
         }
 
         public override string HelpTips()
@@ -295,29 +259,13 @@ namespace Todo
         }
     }
 
-    public class ExitCommand : CommandBase
-    {
-        public override void Execute()
-        {
-
-        }
-
-        public override string HelpTips()
-        {
-            return "";
-        }
-
-        public override bool NeedWrite()
-        {
-            return true;
-        }
-    }
-
     public class AddTagsCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             TodoMgr.Instance.AddTags(Index, Tags);
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
         }
 
         public override string HelpTips()
@@ -333,9 +281,11 @@ namespace Todo
 
     public class DelTagsCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             TodoMgr.Instance.DelTags(Index, Tags);
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
         }
 
         public override string HelpTips()
@@ -351,14 +301,43 @@ namespace Todo
 
     public class DoneTodoCommand : CommandBase
     {
-        public override void Execute()
+        public override LogEnum Execute()
         {
             TodoMgr.Instance.DoneTodo(Index);
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
         }
 
         public override string HelpTips()
         {
-            return "设置存储路径";
+            return "完成Todo(添加'已完成'标签)";
+        }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
+    }
+
+    public class ClearTodoCommand : CommandBase
+    {
+        public override LogEnum Execute()
+        {
+            if (Content == "done")
+            {
+                TodoMgr.Instance.ClearTodo(new List<string> { SpecialTag.Done });
+            }
+            else
+            {
+                TodoMgr.Instance.ClearTodo(Tags);
+            }
+            CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
+            return LogEnum.None;
+        }
+
+        public override string HelpTips()
+        {
+            return "清除对应标签的Todo(无标签则全部清除)";
         }
 
         public override bool NeedWrite()

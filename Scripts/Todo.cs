@@ -1,7 +1,15 @@
+using System;
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
 namespace Todo
 {
+    public static class SpecialTag
+    {
+        public static readonly string Task = "任务";
+        public static readonly string Done = "已完成";
+    }
+
     public class Todo
     {
         public HashSet<string> tags = new HashSet<string>();
@@ -9,14 +17,8 @@ namespace Todo
         public Todo(string content, List<string> tags = null)
         {
             this.content = content;
-            if (tags == null || tags.Count == 0)
-            {
-                AddTag("收集箱"); // 默认tag
-            }
-            else
-            {
-                AddTags(tags);
-            }
+            AddTags(tags);
+            AddTag(SpecialTag.Task);
         }
         public void AddTag(string tag)
         {
@@ -32,7 +34,7 @@ namespace Todo
                 tags.Remove(tag);
             }
         }
-        public void AddTags(List<string> tags)
+        public LogEnum AddTags(List<string> tags)
         {
             if (tags != null && tags.Count != 0)
             {
@@ -40,14 +42,11 @@ namespace Todo
                 {
                     AddTag(tags[i]);
                 }
-                LogMgr.Instance.SystemLog(LogEnum.AddTagsSuccess);
+                return LogEnum.AddTagsSuccess;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.NoTag);
-            }
+            return LogEnum.NoTag;
         }
-        public void DelTags(List<string> tags)
+        public LogEnum DelTags(List<string> tags)
         {
             if (tags != null)
             {
@@ -55,23 +54,32 @@ namespace Todo
                 {
                     DelTag(tags[i]);
                 }
-                LogMgr.Instance.SystemLog(LogEnum.DelTagsSuccess);
+                return LogEnum.DelTagsSuccess;
             }
-            else
-            {
-                LogMgr.Instance.SystemLog(LogEnum.NoTag);
-            }
+            return LogEnum.NoTag;
         }
         public void DoneTodo()
         {
-            AddTag("已完成");
+            AddTag(SpecialTag.Done);
+        }
+        public string ToFileString()
+        {
+            string str = "";
+            foreach (var tag in tags)
+            {
+                if (tag != SpecialTag.Task)
+                {
+                    str += "[" + tag + "] ";
+                }
+            }
+            return str + content;
         }
         public override string ToString()
         {
             string str = "";
             foreach (var tag in tags)
             {
-                if (tag != "收集箱")
+                if (tag != SpecialTag.Task && tag != SpecialTag.Done)
                 {
                     str += "[" + tag + "] ";
                 }
