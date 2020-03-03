@@ -1,3 +1,4 @@
+using System;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -11,22 +12,24 @@ namespace Todo
 
         private List<string> tags;
         private string content;
-        private int index;
+        private List<int> indexs;
 
         public List<string> Tags { get { return tags; } }
-        public int Index { get { return index; } }
+        public List<int> Indexs { get { return indexs; } }
+        public int Index0 { get { if (indexs.Count >= 1) return indexs[0]; return -1; } }
+        public int Index1 { get { if (indexs.Count >= 2) return indexs[1]; return -1; } }
         public string Content { get { return content; } }
 
         public bool InitCommand(List<string> param)
         {
             this.param = param;
             this.tags = new List<string>();
-            this.index = -1;
+            this.indexs = new List<int>();
             this.content = "";
             if (CheckParam())
             {
                 tags = GetTags();
-                index = GetIndex();
+                indexs = GetIndexs();
                 content = GetContent();
                 return true;
             }
@@ -70,17 +73,18 @@ namespace Todo
             return tags;
         }
 
-        private int GetIndex()
+        private List<int> GetIndexs()
         {
+            List<int> indexs = new List<int>();
             for (int i = 0; i < param.Count; i++)
             {
                 int result;
                 if (int.TryParse(param[i], out result))
                 {
-                    return result;
+                    indexs.Add(result);
                 }
             }
-            return -1;
+            return indexs;
         }
 
         private string GetContent()
@@ -109,6 +113,8 @@ namespace Todo
         DoneTodo = 8,
         ClearTodo = 9,
         Restore = 10,
+        Sort = 11,
+        Swap = 12,
     }
     #region 工具类
     // public static class CommandUtility
@@ -197,7 +203,7 @@ namespace Todo
     {
         public override LogEnum Execute()
         {
-            TodoMgr.Instance.DelTodo(Index);
+            TodoMgr.Instance.DelTodo(Index0);
             CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
             return LogEnum.None;
         }
@@ -220,15 +226,15 @@ namespace Todo
             LogEnum log = LogEnum.None;
             if (Content == "done")
             {
-                log = TodoMgr.Instance.ShowList(SpecialTag.Done, true);
+                log = TodoMgr.Instance.ShowDone();
             }
             else if (Tags == null || Tags.Count == 0)
             {
-                log = TodoMgr.Instance.ShowList(SpecialTag.Done, false);
+                log = TodoMgr.Instance.ShowTask();
             }
             else if (Tags.Count == 1)
             {
-                log = TodoMgr.Instance.ShowList(Tags[0], true);
+                log = TodoMgr.Instance.ShowHasTag(Tags[0]);
             }
             return log;
         }
@@ -263,7 +269,7 @@ namespace Todo
     {
         public override LogEnum Execute()
         {
-            TodoMgr.Instance.AddTags(Index, Tags);
+            TodoMgr.Instance.AddTags(Index0, Tags);
             CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
             return LogEnum.None;
         }
@@ -283,7 +289,7 @@ namespace Todo
     {
         public override LogEnum Execute()
         {
-            TodoMgr.Instance.DelTags(Index, Tags);
+            TodoMgr.Instance.DelTags(Index0, Tags);
             CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
             return LogEnum.None;
         }
@@ -303,7 +309,7 @@ namespace Todo
     {
         public override LogEnum Execute()
         {
-            TodoMgr.Instance.DoneTodo(Index);
+            TodoMgr.Instance.DoneTodo(Index0);
             CommandMgr.Instance.ExecuteCommand(CommandType.ShowTodos);
             return LogEnum.None;
         }
@@ -338,6 +344,24 @@ namespace Todo
         public override string HelpTips()
         {
             return "清除对应标签的Todo(无标签则全部清除)";
+        }
+
+        public override bool NeedWrite()
+        {
+            return true;
+        }
+    }
+
+    public class SortCommand : CommandBase
+    {
+        public override LogEnum Execute()
+        {
+            return LogEnum.None;
+        }
+
+        public override string HelpTips()
+        {
+            return "排序Todo";
         }
 
         public override bool NeedWrite()

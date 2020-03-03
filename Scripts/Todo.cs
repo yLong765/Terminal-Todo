@@ -12,13 +12,16 @@ namespace Todo
 
     public class Todo
     {
-        public HashSet<string> tags = new HashSet<string>();
+        public List<string> tags = new List<string>();
         public string content;
         public Todo(string content, List<string> tags = null)
         {
             this.content = content;
             AddTags(tags);
-            AddTag(SpecialTag.Task);
+            if (!tags.Contains(SpecialTag.Done))
+            {
+                AddTag(SpecialTag.Task);
+            }
         }
         public void AddTag(string tag)
         {
@@ -60,6 +63,7 @@ namespace Todo
         }
         public void DoneTodo()
         {
+            DelTag(SpecialTag.Task);
             AddTag(SpecialTag.Done);
         }
         public string ToFileString()

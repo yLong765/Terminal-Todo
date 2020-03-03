@@ -40,7 +40,7 @@ namespace Todo
         static void Test()
         {
             //CommandMgr.Instance.ExecuteCommand("list");
-            //CommandMgr.Instance.ExecuteCommand("done 2");
+            //CommandMgr.Instance.ExecuteCommand("add [p1] p1");
             //CommandMgr.Instance.ExecuteCommand("done 2");
             //CommandMgr.Instance.ExecuteCommand("addt [nb] 0");
             //CommandMgr.Instance.ExecuteCommand("list");

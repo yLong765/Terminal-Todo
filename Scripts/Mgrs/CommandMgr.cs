@@ -18,6 +18,8 @@ namespace Todo
             {CommandType.DelTags, new DelTagsCommand()},
             {CommandType.DoneTodo, new DoneTodoCommand()},
             {CommandType.ClearTodo, new ClearTodoCommand()},
+            //{CommandType.Sort, new ClearTodoCommand()},
+            //{CommandType.Swap, new ClearTodoCommand()},
         };
         private Dictionary<string, CommandType> _strToCommand = new Dictionary<string, CommandType>()
         {
@@ -30,6 +32,8 @@ namespace Todo
             {"delt", CommandType.DelTags},
             {"done", CommandType.DoneTodo},
             {"clear", CommandType.ClearTodo},
+            //{"sort", CommandType.Sort},
+            //{"swap", CommandType.Swap},
         };
         public List<string> GetCommandList()
         {
