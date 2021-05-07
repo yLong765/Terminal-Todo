@@ -47,7 +47,6 @@ function NewTodo(name, endTime)
 end
 
 --[[Assert]]--
-
 function AssertToNumberClimp(value, left, right, error_message)
     value = tonumber(value)
     if value == nil or value < left or value > right then
@@ -57,44 +56,83 @@ function AssertToNumberClimp(value, left, right, error_message)
     return value
 end
 
---[[主程序]]--
+--[[format]]--
+function PrintHelpFormat(actionName, v1Type, v2Type, tip)
+    print(string.format("%-9s %-9s %-9s %s", actionName, v1Type, v2Type, tip))
+end
 
+--[[init]]--
 local todos = LoadConfig()
 
 local action = arg[1]
 local v1 = arg[2]
 local v2 = arg[3]
 
--- local action = "swap"
--- local v1 = "1"
--- local v2 = "2"
-
-if action == "add" then
+--[[action operate]]--
+function Add()
     table.insert(todos, NewTodo(v1))
-elseif action == "inster" then
+end
+
+function Inster()
     v1 = AssertToNumberClimp(v1, 1, #todos, "error")
     table.insert(todos, v1, v2)
-elseif action == "del" then
+end
+
+function Del()
     v1 = AssertToNumberClimp(v1, 1, #todos, "error")
     table.remove(todos, v1)
-elseif action == "swap" then
+end
+
+function Swap()
     v1 = AssertToNumberClimp(v1, 1, #todos, "error")
     v2 = AssertToNumberClimp(v2, 1, #todos, "error")
     local t = todos[v1]
     todos[v1] = todos[v2]
     todos[v2] = t
-elseif action == "done" then
-    v1 = AssertToNumberClimp(v1, 1, #todos, "error")
-    table.remove(todos, v1)
-elseif action == "help" then
-    print("add\tstring")
-    print("inster\tnumber\tstring")
-    print("del\tnumber")
-    print("swap\tnumber\tnumber")
-    print("done\tnumber")
 end
 
-if action ~= "help" then
+function Done()
+    v1 = AssertToNumberClimp(v1, 1, #todos, "error")
+    table.remove(todos, v1)
+end
+
+function Help()
+    PrintHelpFormat("action", "arg1Type", "arg2Type", "tip")
+    PrintHelpFormat("a[dd]", "string", "", "Add to-do")
+    PrintHelpFormat("i[nster]", "number", "string", "Insert a to-do list to a certain position")
+    PrintHelpFormat("d[el]", "number", "", "Delete to-do")
+    PrintHelpFormat("s[wap]", "number", "number", "Swap the order of to-dos")
+    PrintHelpFormat("done", "number", "", "Complete to-do")
+    PrintHelpFormat("h[elp]", "", "", "Help page")
+end
+
+local operates = {
+    add = { execute = Add, use = false},
+    inster = { execute = Inster, use = false},
+    del = { execute = Del, use = false},
+    swap = { execute = Swap, use = false},
+    done = { execute = Done, use = false},
+    help = { execute = Help, use = false},
+}
+
+local abb2intact = {
+    a = "add",
+    i = "inster",
+    d = "del",
+    s = "swap",
+    h = "help",
+}
+
+--[[run operate]]--
+action = abb2intact[action] or action
+local operate = operates[action]
+if operate then
+    operate.execute()
+    operate.use = true
+end
+
+--[[show todo list]]--
+if not operates.help.use then
     for i, v in ipairs(todos) do
         print(i, v.name)
     end
