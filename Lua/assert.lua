@@ -4,9 +4,10 @@ function assert.number_climp(value, left, right, error_message)
     value = tonumber(value)
     if value == nil or value < left or value > right then
         print(error_message)
-        os.exit()
+        --os.exit()
+        return false, value
     end
-    return value
+    return true, value
 end
 
 function assert.is_number(value)

@@ -38,7 +38,7 @@ function todo_mgr.create(name, endTime, process, parent, state)
         table.remove(todo.childs, id)
     end
     todo.get_process = function()
-        if parent ~= -1 and todo.state == todo_state.done then
+        if todo.state == todo_state.done then
             return "100%"
         end
         if #todo.childs == 0 then
@@ -54,8 +54,8 @@ function todo_mgr.create(name, endTime, process, parent, state)
         end
         return string.format("%d%%", done_count / count * 100)
     end
-    todo.to_string = function()
-        return string.format("%-9s%-9s%-9s", todo.name, todo.get_process(), todo.state)
+    todo.to_string = function(l)
+        return string.format("%-" .. l .. "s%-12s%s", todo.name, todo.get_process(), todo.state)
     end
     return todo
 end
@@ -104,11 +104,18 @@ end
 
 function todo_mgr.show()
     if #todos > 0 then
-        print(string.format("%-9s%-9s%-9s%s", "index", "name", "process", "state"))
+        local maxL = 0
         for id, todo in ipairs(todos) do
-            print(string.format("%-9s%s", id, todo.to_string()))
+            maxL = math.max(maxL, #todo.name)
             for cid, child in ipairs(todo.childs) do
-                print(string.format("%-9s%s", id .. "-" .. cid, child.to_string()))
+                maxL = math.max(maxL, #child.name)
+            end
+        end
+        print(string.format("%-10s%-".. maxL+5 .."s%-12s%s", "index", "name", "process", "state"))
+        for id, todo in ipairs(todos) do
+            print(string.format("%-10s%s", id, todo.to_string(maxL + 5)))
+            for cid, child in ipairs(todo.childs) do
+                print(string.format("%-10s%s", id .. "-" .. cid, child.to_string(maxL + 5)))
             end
         end
     else

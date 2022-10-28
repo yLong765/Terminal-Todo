@@ -7,52 +7,59 @@ function PrintHelpFormat(actionName, v1Type, v2Type, tip)
     print(string.format("%-9s| %-9s| %-9s| %s", actionName, v1Type, v2Type, tip))
 end
 
---[[init]]
-local action = arg[1]
-local v1 = arg[2]
-local v2 = arg[3]
-
--- local action = "a"
--- local v1 = "1"
--- local v2 = "打卡"
-
 todo_mgr.init()
 
 --[[action operate]]
-function Add()
+function Add(v1, v2)
     if v2 ~= nil and assert.is_number(v1) then
-        v1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
-        todo_mgr.add(v2, nil, nil, v1)
+        local res, v = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+        if res then
+            todo_mgr.add(v2, nil, nil, v)
+        end
     else
         todo_mgr.add(v1)
     end
 end
 
-function Inster()
-    v1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
-    todo_mgr.insert(v1, v2)
-end
-
-function Del()
-    v1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
-    if assert.is_number(v2) then
-        v2 = assert.number_climp(v2, 1, #todo_mgr.get_childs(v1), "The second number is incorrect")
+function Inster(v1, v2)
+    local res, v = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+    if res then
+        todo_mgr.insert(v, v2)
     end
-    todo_mgr.del(v1, v2)
 end
 
-function Swap()
-    v1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
-    v2 = assert.number_climp(v2, 1, #todo_mgr.get_todos(), "The second number is incorrect")
-    todo_mgr.swap(v1, v2)
-end
-
-function Done()
-    v1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+function Del(v1, v2)
+    local res1
+    local res2 = true
+    local nv1, nv2
+    res1, nv1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
     if assert.is_number(v2) then
-        v2 = assert.number_climp(v2, 1, #todo_mgr.get_childs(v1), "The second number is incorrect")
+        res2, nv2 = assert.number_climp(v2, 1, #todo_mgr.get_childs(v1), "The second number is incorrect")
     end
-    todo_mgr.done(v1, v2)
+    if res1 and res2 then
+        todo_mgr.del(nv1, nv2)
+    end
+end
+
+function Swap(v1, v2)
+    local res1, nv1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+    local res2, nv2 = assert.number_climp(v2, 1, #todo_mgr.get_todos(), "The second number is incorrect")
+    if res1 and res2 then
+        todo_mgr.swap(nv1, nv2)
+    end
+end
+
+function Done(v1, v2)
+    local res1
+    local res2 = true
+    local nv1, nv2
+    res1, nv1 = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+    if assert.is_number(v2) then
+        res2, nv2 = assert.number_climp(v2, 1, #todo_mgr.get_childs(v1), "The second number is incorrect")
+    end
+    if res1 and res2 then
+        todo_mgr.done(nv1, nv2)
+    end
 end
 
 function Help()
@@ -66,16 +73,18 @@ function Help()
     PrintHelpFormat("s[wap]", "number", "number", "Swap the order of to-dos")
     PrintHelpFormat("done", "number", "", "Complete to-do")
     PrintHelpFormat("done", "number", "number", "Complete child to-do  for [number] to-do")
+    --PrintHelpFormat("show", "string", "string", "")
+    PrintHelpFormat("exit", "", "", "exit todo software")
     PrintHelpFormat("h[elp]", "", "", "Help page")
 end
 
 local operates = {
-    add = {execute = Add, useCount = 0},
-    inster = {execute = Inster, useCount = 0},
-    del = {execute = Del, useCount = 0},
-    swap = {execute = Swap, useCount = 0},
-    done = {execute = Done, useCount = 0},
-    help = {execute = Help, useCount = 0}
+    add = {execute = Add},
+    inster = {execute = Inster},
+    del = {execute = Del},
+    swap = {execute = Swap},
+    done = {execute = Done},
+    help = {execute = Help}
 }
 
 local abb2intact = {
@@ -87,16 +96,45 @@ local abb2intact = {
 }
 
 --[[run operate]]
-action = abb2intact[action] or action
-local operate = operates[action]
-if operate then
-    operate.execute()
-    operate.useCount = operate.useCount + 1
+function RunOperate(action, v1, v2)
+    local opId =abb2intact[action] or action
+    local operate = operates[opId]
+    if operate then
+        operate.execute(v1, v2)
+    end
 end
-
 --[[show todo list]]
-if operates.help.useCount == 0 then
-    todo_mgr.show()
+function ShowTodoList(action)
+    if abb2intact[action] == nil then
+		print("Please use the 'h' or 'help' to view help")
+    elseif abb2intact[action] ~= "help" then
+		todo_mgr.show()
+    end
+    print()
 end
 
-file_mgr.save_conf(todo_mgr.get_todos())
+function Read()
+    io.write("> ")
+    return ParserString(io.read())
+end
+
+function ParserString(str)
+    local strList = {}
+    string.gsub(str, '[^ ]+', function (w)
+        table.insert(strList, w)
+    end)
+    return strList[1], strList[2], strList[3]
+end
+
+--[[main function]]
+function Main()
+    local action, v1, v2 = Read()
+    while action ~= "exit" do
+        RunOperate(action, v1, v2)
+        ShowTodoList(action)
+        file_mgr.save_conf(todo_mgr.get_todos())
+        action, v1, v2 = Read()
+    end
+end
+
+Main()
