@@ -1,6 +1,5 @@
 local todo_mgr = {}
 local todos = {}
-local tags = {}
 local file_mgr = require("file_mgr")
 local todo_state = {
     wait = "wait",
@@ -13,13 +12,6 @@ function todo_mgr.init()
     local lines = file_mgr.load_conf()
     for i, line in ipairs(lines) do
         todo_mgr.add(string.unpack("sdddss", line))
-    end
-    tags = {}
-    for id, todo in ipairs(todos) do
-        if tags[todo.tag] == nil then
-            tags[todo.tag] = {}
-        end
-        table.insert(tags[todo.tag], todo)
     end
 end
 
@@ -81,19 +73,7 @@ function todo_mgr.add(name, endTime, process, parent, state, tag)
 end
 
 function todo_mgr.set_tag(id, tag)
-    if tags[tag] == nil then
-        tags[tag] = {}
-    end
-    local findId
-    for id, todo in ipairs(tags[todos[id].tag]) do
-        if todo == todos[id] then
-            findId = id
-            break
-        end
-    end
-    table.remove(tags[todos[id].tag], findId)
     todos[id].set_tag(tag)
-    table.insert(tags[tag], todos[id])
 end
 
 function todo_mgr.insert(id, name, endTime, process, parent)
@@ -156,22 +136,16 @@ function todo_mgr.get_tag_max_length()
 end
 
 function todo_mgr.show(v1)
-    if v1 ~= nil and tags[v1] ~= nil then
-        todo_mgr.show_todos(tags[v1])
-    else 
-        todo_mgr.show_todos(todos)
-    end
-end
-
-function todo_mgr.show_todos(todos)
     if #todos > 0 then
         local max_name_l = todo_mgr.get_name_max_length()
         local max_tag_l = todo_mgr.get_tag_max_length()
         print(string.format("%-10s%-".. max_name_l .."s%-".. max_tag_l .."s%-12s", "Index", "Name", "Tag", "Process"))
         for id, todo in ipairs(todos) do
-            print(string.format("%-10s%s", id, todo.to_string(max_name_l, max_tag_l)))
-            for cid, child in ipairs(todo.childs) do
-                print(string.format("%-10s%s", id .. "-" .. cid, child.to_string(max_name_l, max_tag_l)))
+            if v1 == nil or todo.tag == v1 then
+                print(string.format("%-10s%s", id, todo.to_string(max_name_l, max_tag_l)))
+                for cid, child in ipairs(todo.childs) do
+                    print(string.format("%-10s%s", id .. "-" .. cid, child.to_string(max_name_l, max_tag_l)))
+                end
             end
         end
     else
