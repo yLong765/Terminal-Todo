@@ -17,7 +17,16 @@ function Add(v1, v2)
             todo_mgr.add(v2, nil, nil, v)
         end
     else
-        todo_mgr.add(v1)
+        todo_mgr.add(v1, nil, nil, nil, nil, v2)
+    end
+end
+
+function SetTag(v1, v2)
+    if v2 ~= nil and assert.is_number(v1) then
+        local res, v = assert.number_climp(v1, 1, #todo_mgr.get_todos(), "The first number is incorrect")
+        if res then
+            todo_mgr.set_tag(v, v2)
+        end
     end
 end
 
@@ -49,6 +58,10 @@ function Swap(v1, v2)
     end
 end
 
+function Sort(v1, v2)
+    todo_mgr.sort()
+end
+
 function Done(v1, v2)
     local res1
     local res2 = true
@@ -62,28 +75,39 @@ function Done(v1, v2)
     end
 end
 
+function Show(v1, v2)
+    todo_mgr.show(v1)
+end
+
 function Help()
     PrintHelpFormat("action", "arg1Type", "arg2Type", "tip")
     print("------------------------------------------")
     PrintHelpFormat("a[dd]", "string", "", "Add to-do")
+    PrintHelpFormat("a[dd]", "string", "string", "Add to-do with tag")
     PrintHelpFormat("a[dd]", "number", "string", "Add child to-do  for [number] to-do")
+    PrintHelpFormat("sett", "number", "string", "Set tag to to-do for [number] to-do")
     PrintHelpFormat("i[nster]", "number", "string", "Insert a to-do list to a certain position")
     PrintHelpFormat("d[el]", "number", "", "Delete to-do")
     PrintHelpFormat("d[el]", "number", "number", "Delete child to-do  for [number] to-do")
     PrintHelpFormat("s[wap]", "number", "number", "Swap the order of to-dos")
+    PrintHelpFormat("sort", "", "", "Sort by tags")
     PrintHelpFormat("done", "number", "", "Complete to-do")
     PrintHelpFormat("done", "number", "number", "Complete child to-do  for [number] to-do")
-    --PrintHelpFormat("show", "string", "string", "")
+    PrintHelpFormat("show", "", "", "Show to-do list")
+    PrintHelpFormat("show", "string", "", "Show to-do list by Tag")
     PrintHelpFormat("exit", "", "", "exit todo software")
     PrintHelpFormat("h[elp]", "", "", "Help page")
 end
 
 local operates = {
     add = {execute = Add},
+    sett = {execute = SetTag},
     inster = {execute = Inster},
     del = {execute = Del},
     swap = {execute = Swap},
+    sort = {execute = Sort},
     done = {execute = Done},
+    show = {execute = Show},
     help = {execute = Help}
 }
 
@@ -97,7 +121,7 @@ local abb2intact = {
 
 --[[run operate]]
 function RunOperate(action, v1, v2)
-    local opId =abb2intact[action] or action
+    local opId = abb2intact[action] or action
     local operate = operates[opId]
     if operate then
         operate.execute(v1, v2)
@@ -105,9 +129,10 @@ function RunOperate(action, v1, v2)
 end
 --[[show todo list]]
 function ShowTodoList(action)
-    if abb2intact[action] == nil then
+    local opId = abb2intact[action] or action
+    if opId == nil or operates[opId] == nil then
 		print("Please use the 'h' or 'help' to view help")
-    elseif abb2intact[action] ~= "help" then
+    elseif opId ~= "help" and opId ~= "show" then
 		todo_mgr.show()
     end
     print()
