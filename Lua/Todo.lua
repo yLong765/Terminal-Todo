@@ -59,7 +59,7 @@ function Swap(v1, v2)
 end
 
 function Sort(v1, v2)
-    todo_mgr.sort()
+    todo_mgr.sort_tag()
 end
 
 function Done(v1, v2)
@@ -89,12 +89,13 @@ function Help()
     PrintHelpFormat("i[nster]", "number", "string", "Insert a to-do list to a certain position")
     PrintHelpFormat("d[el]", "number", "", "Delete to-do")
     PrintHelpFormat("d[el]", "number", "number", "Delete child to-do  for [number] to-do")
-    PrintHelpFormat("s[wap]", "number", "number", "Swap the order of to-dos")
-    PrintHelpFormat("sort", "", "", "Sort by tags")
+    -- PrintHelpFormat("s[wap]", "number", "number", "Swap the order of to-dos")
+    -- PrintHelpFormat("sort", "", "", "Sort by tags")
     PrintHelpFormat("done", "number", "", "Complete to-do")
     PrintHelpFormat("done", "number", "number", "Complete child to-do  for [number] to-do")
     PrintHelpFormat("show", "", "", "Show to-do list")
     PrintHelpFormat("show", "string", "", "Show to-do list by Tag")
+    PrintHelpFormat("show", "done", "", "Show done to-do list")
     PrintHelpFormat("exit", "", "", "exit todo software")
     PrintHelpFormat("h[elp]", "", "", "Help page")
 end
@@ -156,6 +157,7 @@ function Main()
     local action, v1, v2 = Read()
     while action ~= "exit" do
         RunOperate(action, v1, v2)
+        todo_mgr.sort_tag()
         ShowTodoList(action)
         file_mgr.save_conf(todo_mgr.get_todos())
         action, v1, v2 = Read()
